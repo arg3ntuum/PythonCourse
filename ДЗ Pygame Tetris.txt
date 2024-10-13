@@ -1,0 +1,131 @@
+import pygame
+import random
+
+pygame.init()
+
+# Налаштування екрану
+WIDTH = 300
+HEIGHT = 600
+GRID_WIDTH = 10
+GRID_HEIGHT = 20
+
+# Встановлення вікна
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Tetris")
+clock = pygame.time.Clock()
+
+# Кольори
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
+ORANGE = (255, 165, 0)
+PURPLE = (128, 0, 128)
+CYAN = (0, 255, 255)
+
+colors = [BLACK, RED, GREEN, BLUE, YELLOW, ORANGE, PURPLE, CYAN]
+
+# Фігури
+shapes = [
+    [[1, 1, 1, 1]],  # Лінія
+    [[1, 1], [1, 1]],  # Квадрат
+    [[0, 1, 0], [1, 1, 1]],  # Т
+    [[1, 1, 0], [0, 1, 1]],  # Z
+    [[0, 1, 1], [1, 1, 0]],  # S
+    [[1, 0, 0], [1, 1, 1]],  # L
+    [[0, 0, 1], [1, 1, 1]],  # J
+]
+
+# Сітка
+grid = [[0] * GRID_WIDTH for _ in range(GRID_HEIGHT)]
+
+def draw_grid():
+    for y in range(GRID_HEIGHT):
+        for x in range(GRID_WIDTH):
+            if grid[y][x] != 0:
+                pygame.draw.rect(screen, colors[grid[y][x]], (x * (WIDTH // GRID_WIDTH), y * (HEIGHT // GRID_HEIGHT), WIDTH // GRID_WIDTH, HEIGHT // GRID_HEIGHT))
+
+def draw_shape(shape, offset):
+    for y in range(len(shape)):
+        for x in range(len(shape[y])):
+            if shape[y][x]:
+                pygame.draw.rect(screen, colors[shape[y][x]], ((x + offset[0]) * (WIDTH // GRID_WIDTH), (y + offset[1]) * (HEIGHT // GRID_HEIGHT), WIDTH // GRID_WIDTH, HEIGHT // GRID_HEIGHT))
+
+def check_collision(shape, offset):
+    for y in range(len(shape)):
+        for x in range(len(shape[y])):
+            if shape[y][x]:
+                if (x + offset[0] < 0 or
+                    x + offset[0] >= GRID_WIDTH or
+                    y + offset[1] >= GRID_HEIGHT or
+                    (y + offset[1] >= 0 and grid[y + offset[1]][x + offset[0]] != 0)):
+                    return True
+    return False
+
+def merge_shape(shape, offset):
+    for y in range(len(shape)):
+        for x in range(len(shape[y])):
+            if shape[y][x]:
+                grid[y + offset[1]][x + offset[0]] = shape[y][x]
+
+def clear_lines():
+    global grid
+    new_grid = [row for row in grid if any(value == 0 for value in row)]
+    lines_cleared = GRID_HEIGHT - len(new_grid)
+    new_grid = [[0] * GRID_WIDTH for _ in range(lines_cleared)] + new_grid
+    grid = new_grid
+
+def get_new_shape():
+    return random.choice(shapes)
+
+# Основний цикл гри
+while True:
+    screen.fill(BLACK)
+    current_shape = get_new_shape()
+    current_pos = [GRID_WIDTH // 2 - len(current_shape[0]) // 2, 0]
+    game_over = False
+
+    while not game_over:
+        screen.fill(BLACK)
+        draw_grid()
+        draw_shape(current_shape, current_pos)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    current_pos[0] -= 1
+                    if check_collision(current_shape, current_pos):
+                        current_pos[0] += 1
+                if event.key == pygame.K_RIGHT:
+                    current_pos[0] += 1
+                    if check_collision(current_shape, current_pos):
+                        current_pos[0] -= 1
+                if event.key == pygame.K_DOWN:
+                    current_pos[1] += 1
+                    if check_collision(current_shape, current_pos):
+                        current_pos[1] -= 1
+                if event.key == pygame.K_UP:
+                    current_shape = [list(row) for row in zip(*current_shape[::-1])]
+                    if check_collision(current_shape, current_pos):
+                        current_shape = [list(row) for row in zip(*current_shape)][::-1]
+
+        current_pos[1] += 1
+        if check_collision(current_shape, current_pos):
+            current_pos[1] -= 1
+            merge_shape(current_shape, current_pos)
+            clear_lines()
+            current_shape = get_new_shape()
+            current_pos = [GRID_WIDTH // 2 - len(current_shape[0]) // 2, 0]
+            if check_collision(current_shape, current_pos):
+                game_over = True
+
+        pygame.display.flip()
+        clock.tick(10)
+
+pygame.quit()

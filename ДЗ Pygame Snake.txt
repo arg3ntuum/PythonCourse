@@ -1,0 +1,124 @@
+Перед вами код до гри "Змійка на Python"
+Вам треба зробити певні виправлення в коді.
+
+from tkinter.constants import RIGHT
+
+import pygame
+import time
+import random
+
+pygame.init()
+
+screen_x = 540
+screen_y = 480
+
+fps = 5
+
+screen = pygame.display.set_mode((screen_x, screen_y))
+clock = pygame.time.Clock()
+bg = pygame.image.load('images/background.png').convert()
+pygame.display.set_caption('Snake')
+
+SNAKE_SIZE = 15
+
+cells_x = int(screen_x / SNAKE_SIZE)
+cells_y = int(screen_y / SNAKE_SIZE)
+
+x = int(cells_x / 2) * SNAKE_SIZE
+y = int(cells_y / 2) * SNAKE_SIZE
+
+x_f = random.randrange(1, cells_x) * SNAKE_SIZE
+y_f = random.randrange(1, cells_y) * SNAKE_SIZE
+snake_length = 1
+score = 0
+
+dx = 0
+dy = -1
+
+
+def game_over():
+    font = pygame.font.SysFont(None, 50)
+    text = font.render('GAME OVER', True, pygame.Color('white'))
+    screen.blit(text, [screen_x / x, screen_y / y])
+
+snake_list = [[x, y]]
+
+def draw_snake(snake_list):
+    for block in snake_list:
+        pygame.draw.rect(screen, pygame.Color('black'), [block[0], block[1], SNAKE_SIZE, SNAKE_SIZE])
+
+def show_score():
+    sc_font = pygame.font.SysFont(None, 15)
+    sc_text = sc_font.render('SCORE' + str(score), True, pygame.Color('white'))
+    screen.blit(sc_text, [5, 12])
+
+Right = True
+Left = True
+Up = True
+Down = False
+
+game = True
+while game:
+    screen.blit(bg, (0, 0))
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            exit()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT and Left:
+                dx = -1
+                dy = 0
+                Right = False
+                Left = True
+                Up = True
+                Down = True
+            elif event.key == pygame.K_RIGHT and Right:
+                dx = 1
+                dy = 0
+                Right = True
+                Left = False
+                Up = True
+                Down = True
+            elif event.key == pygame.K_UP and Up:
+                dx = 0
+                dy = -1
+                Right = True
+                Left = True
+                Up = True
+                Down = False
+            elif event.key == pygame.K_DOWN and Down:
+                dx = 0
+                dy = 1
+                Right = True
+                Left = True
+                Up = False
+                Down = True
+    if x >= screen_x or x < 0 or y >= screen_y or y < 0:
+        game_over()
+        pygame.display.flip()
+        time.sleep(2)
+        game = False
+
+    x += dx * SNAKE_SIZE
+    y += dy * SNAKE_SIZE
+
+    head = [x, y]
+    snake_list.append(head)
+    if len (snake_list) > snake_length:
+        del snake_list[0]
+
+    draw_snake(snake_list)
+    for block in snake_list[:-1]:
+        if block == head:
+            game_over()
+    pygame.draw.circle(screen, pygame.Color('red'), [x_f + SNAKE_SIZE / 2, y_f + SNAKE_SIZE / 2], SNAKE_SIZE / 2)
+
+    if x == x_f and y == y_f:
+        score += 1
+        x_f = random.randrange(1, cells_x) * SNAKE_SIZE
+        y_f = random.randrange(1, cells_y) * SNAKE_SIZE
+        snake_length += 1
+    show_score()
+    pygame.display.flip()
+    clock.tick(fps)
+
+number = input()

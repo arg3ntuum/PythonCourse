@@ -1,0 +1,112 @@
+import pygame
+import random
+
+from pygame.examples.audiocapture import sound
+
+from _ping_pong.points import Point
+
+if __name__ == '__main__':
+    pygame.init()
+
+    screen_size = Point(1000, 500)
+
+    p_width = 15
+    p_height = 100
+    p_speed = 15
+
+    point_left = 0
+    point_right = 0
+
+    ball_r = 10
+    ball_speed = 6
+    ball_d = 10*2
+
+    ball_start_x = screen_size.x/2 - ball_r
+    ball_start_y = screen_size.y/2 - ball_r
+
+    fps = 60
+    screen = pygame.display.set_mode((screen_size.x, screen_size.y))
+    platform_right = pygame.Rect(screen_size.x - p_width - 5, screen_size.y / 2- p_height/2, p_width, p_height)
+    platform_left = pygame.Rect(5, screen_size.y / 2- p_height/2, p_width, p_height)
+    ball = pygame.Rect(ball_start_x, ball_start_y, ball_d, ball_d)
+
+    dx = 1
+    dy = -1
+
+    font = pygame.font.SysFont(None, 50)
+
+    green = (0, 133, 35)
+    clock  = pygame.time.Clock()
+
+    pygame.display.set_caption('Ping Pong')
+    sound = pygame.mixer.Sound('sounds/ping.wav')
+    pause = False
+    game = True
+    while game:
+        screen.fill(green)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game = False
+                pygame.quit()
+                exit()
+        key = pygame.key.get_pressed()
+        if (key[pygame.K_UP] and platform_right.top > 0):
+            platform_right.top -= p_speed
+        elif (key[pygame.K_DOWN] and platform_right.bottom < screen_size.y):
+            platform_right.bottom += p_speed
+        if (key[pygame.K_w] and platform_left.top > 0):
+            platform_left.top -= p_speed
+        elif (key[pygame.K_s] and platform_left.bottom < screen_size.y):
+            platform_left.bottom += p_speed
+
+        pygame.draw.rect(screen, pygame.Color('White'), platform_right)
+        pygame.draw.rect(screen, pygame.Color('White'), platform_left)
+        pygame.draw.circle(screen, pygame.Color('White'), ball.center, ball_r)
+        ball.x += ball_speed * dx
+        ball.y += ball_speed * dy
+
+        if ball.centery < ball_r or ball.centery > screen_size.y:
+            dy = -dy
+            pygame.mixer.Sound.play(sound)
+        elif ball.colliderect(platform_left) or ball.colliderect(platform_right):
+            dx= -dx
+            pygame.mixer.Sound.play(sound)
+
+        if ball.centerx > screen_size.x:
+            point_left += 1
+            ball.x = ball_start_x
+            ball.y = ball_start_y
+            dx = 0
+            dy = 0
+            goal_time = pygame.time.get_ticks()
+            pause = True
+
+        elif ball.centerx < 0:
+            point_right += 1
+            ball.x = ball_start_x
+            ball.y = ball_start_y
+            dx = 0
+            dy = 0
+            goal_time = pygame.time.get_ticks()
+            pause = True
+
+        if pause:
+            time = pygame.time.get_ticks()
+            if time - goal_time > 3000:
+                dx = random.choice([-1, 1])
+                dy = random.choice([-1, 1])
+                pause = False
+
+        right_text = font.render(f'{point_right}', True, pygame.Color('White'))
+        screen.blit(right_text, (screen_size.x - 40, 20))
+        left_text = font.render(f'{point_left}', True, pygame.Color('White'))
+        screen.blit(left_text, (20, 20))
+
+
+
+        pygame.display.flip()
+        clock.tick(fps)
+
+    pygame.quit()
+    exit()
+
